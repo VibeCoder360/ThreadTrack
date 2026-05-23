@@ -1,23 +1,55 @@
 import Foundation
 import SwiftData
 
-/// A laundry batch — tracks when items were sent for washing.
-/// NOTE: Schema is preliminary — TT-T1 will refine based on architecture design.
+// MARK: - LaundryBatch
+
+/// A record of one laundry cycle. Groups multiple ClothingItems that were washed together.
 @Model
 final class LaundryBatch {
-    var date: Date
+
+    var id: UUID
+    /// When the laundry was started (put in the wash).
+    var startedAt: Date
+    /// When the laundry was completed (removed from dryer / hung up). Nil if still in progress.
+    var completedAt: Date?
+    var notes: String?
+
+    /// Items included in this batch.
     var items: [ClothingItem]
-    var completed: Bool
-    var createdAt: Date
 
     init(
-        date: Date = Date(),
+        startedAt: Date = Date(),
         items: [ClothingItem] = [],
-        completed: Bool = false
+        notes: String? = nil
     ) {
-        self.date = date
+        self.id = UUID()
+        self.startedAt = startedAt
+        self.notes = notes
         self.items = items
-        self.completed = completed
-        self.createdAt = Date()
+    }
+
+    /// Whether this batch is still in progress.
+    var isInProgress: Bool {
+        completedAt == nil
+    }
+
+    /// Total number of items in the batch.
+    var itemCount: Int {
+        items.count
+    }
+
+    /// Duration of the laundry cycle, or nil if not yet completed.
+    var duration: TimeInterval? {
+        guard let completedAt else { return nil }
+        return completedAt.timeIntervalSince(startedAt)
+    }
+
+    /// Human-readable duration string.
+    var durationString: String? {
+        guard let duration else { return nil }
+        let hours = Int(duration) / 3600
+        let minutes = (Int(duration) % 3600) / 60
+        if hours > 0 { return "\(hours)h \(minutes)m" }
+        return "\(minutes)m"
     }
 }

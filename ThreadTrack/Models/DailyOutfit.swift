@@ -1,23 +1,40 @@
 import Foundation
 import SwiftData
 
-/// A daily outfit photo with references to the matched clothing items.
-/// NOTE: Schema is preliminary — TT-T1 will refine based on architecture design.
+// MARK: - DailyOutfit
+
+/// Represents what the user wore on a given day. Each outfit can reference multiple clothing items.
 @Model
 final class DailyOutfit {
+
+    var id: UUID
+    /// The calendar date this outfit was worn (midnight).
     var date: Date
-    var photoData: Data?
-    var items: [ClothingItem]
+    var notes: String?
     var createdAt: Date
+
+    /// All clothing items worn as part of this outfit.
+    var items: [ClothingItem]
 
     init(
         date: Date = Date(),
-        photoData: Data? = nil,
-        items: [ClothingItem] = []
+        items: [ClothingItem] = [],
+        notes: String? = nil
     ) {
-        self.date = date
-        self.photoData = photoData
-        self.items = items
+        self.id = UUID()
+        self.date = Calendar.current.startOfDay(for: date)
+        self.notes = notes
         self.createdAt = Date()
+        self.items = items
+    }
+
+    /// Returns a comma-separated list of item names.
+    var summary: String {
+        items.map(\.name).joined(separator: ", ")
+    }
+
+    /// Returns unique categories represented in this outfit.
+    var categories: [ClothingCategory] {
+        Array(Set(items.map(\.category))).sorted { $0.rawValue < $1.rawValue }
     }
 }
