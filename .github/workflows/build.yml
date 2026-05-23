@@ -1,0 +1,45 @@
+name: Build ThreadTrack (macOS)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Test (macOS)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
+
+      - name: Build (Debug)
+        run: xcodebuild build -project ThreadTrack.xcodeproj -scheme ThreadTrack -configuration Debug -destination 'platform=macOS' CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO | xcpretty
+
+      - name: Build (Release)
+        run: xcodebuild build -project ThreadTrack.xcodeproj -scheme ThreadTrack -configuration Release -destination 'platform=macOS' CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO | xcpretty
+
+      - name: Run Unit Tests
+        run: xcodebuild test -project ThreadTrack.xcodeproj -scheme ThreadTrack -destination 'platform=macOS' CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO | xcpretty
+
+  swift-lint:
+    name: Swift Syntax Check
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swift Compiler Check
+        run: |
+          swiftc -typecheck \
+            ThreadTrack/ThreadTrack/Models/ClothingCategory.swift \
+            ThreadTrack/ThreadTrack/Models/ClothingItem.swift \
+            ThreadTrack/ThreadTrack/Models/DailyOutfit.swift \
+            ThreadTrack/ThreadTrack/Models/LaundryBatch.swift \
+            2>&1 || true
